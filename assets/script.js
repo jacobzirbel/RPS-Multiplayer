@@ -1,5 +1,19 @@
 window.onload = () => {
 	createButtons();
+
+	database.ref("result").on("value", (snapshot) => {
+		result = snapshot.val();
+		if (result) {
+			console.log(result);
+			oppSelection = result.sel.find((e) => e !== mySelection) || mySelection;
+			document.getElementById("mySelection").textContent =
+				"Selection: " + mySelection;
+			document.getElementById("oppSelection").textContent =
+				"Selection: " + oppSelection;
+			document.getElementById("outcome").textContent = result.outcome;
+			database.ref("result").set({});
+		}
+	});
 };
 let config = {
 	apiKey: "AIzaSyDAa_Gey0LPsclpNXIsWqnbiL52J9ApuN0",
@@ -20,7 +34,7 @@ const optionClick = (selection) => {
 	hideButtons();
 	database.ref("selection").once("value", (snapshot) => {
 		if (snapshot.val()) {
-			compare(selection, snapshot.val());
+			play(selection, snapshot.val());
 			database.ref("selection").set({});
 		} else {
 			database.ref("selection").set(selection);
@@ -39,9 +53,11 @@ const createButtons = () => {
 		document.getElementById("controls").appendChild(button);
 	});
 };
-const compare = (mySelection, oppSelection) => {
+const play = (mySelection, oppSelection) => {
 	let result = gameLogic(mySelection, oppSelection);
-	console.log(result);
+	database
+		.ref("result")
+		.set({ sel: [oppSelection, mySelection], outcome: result[0] });
 };
 const gameLogic = (mySelection, oppSelection) => {
 	a = options.indexOf(mySelection);
