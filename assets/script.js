@@ -1,18 +1,21 @@
 window.onload = () => {
-	database.ref("players").on("value", (snapshot) => {
+	db.ref("players").on("value", (snapshot) => {
 		let val = snapshot.val();
 		if (!myId) createUserButtons(val);
 	});
-	database.ref("result").on("value", (snapshot) => {
+	db.ref("result").on("value", (snapshot) => {
 		result = snapshot.val();
 		if (result) {
 			oppSelection = result.sel.find((e) => e !== mySelection) || mySelection;
+			outcome = result.outcome;
 			document.getElementById("mySelection").textContent =
 				"Selection: " + mySelection;
 			document.getElementById("oppSelection").textContent =
 				"Selection: " + oppSelection;
-			document.getElementById("outcome").textContent = result.outcome;
-			database.ref("result").set({});
+			let winner = outcome.split(" ").indexOf(mySelection) ? oppId : myId;
+			addToWins(winner);
+			document.getElementById("outcome").textContent = outcome;
+			db.ref("result").set({});
 		}
 	});
 };
@@ -25,20 +28,20 @@ let config = {
 	storageBucket: "rps-5f79a.appspot.com",
 };
 firebase.initializeApp(config);
-let database = firebase.database();
+let db = firebase.database();
 let options = ["Rock", "Paper", "Scissors", "Lizard", "Spock"];
-let connectionsRef = database.ref("/connections");
-let connectedRef = database.ref(".info/connected");
+let connectionsRef = db.ref("/connections");
+let connectedRef = db.ref(".info/connected");
 let myId, oppId;
 const optionClick = (selection) => {
 	mySelection = selection;
 	hideButtons();
-	database.ref("selection").once("value", (snapshot) => {
+	db.ref("selection").once("value", (snapshot) => {
 		if (snapshot.val()) {
 			play(selection, snapshot.val());
-			database.ref("selection").set({});
+			db.ref("selection").set({});
 		} else {
-			database.ref("selection").set(selection);
+			db.ref("selection").set(selection);
 		}
 	});
 };
@@ -62,7 +65,7 @@ const playerSelect = (selection) => {
 	oppId = "player" + ((selection ? 0 : 1) + 1);
 	connectedRef.on("value", (snap) => {
 		if (snap.val()) {
-			var con = database
+			var con = db
 				.ref("players")
 				.child(myId + "/connected")
 				.push(true);
@@ -85,12 +88,17 @@ const createUserButtons = (val) => {
 	document.getElementById("home").innerHTML = "";
 	buttons.forEach((e) => document.getElementById("home").appendChild(e));
 };
-
+const addToWins = (winner) => {
+	db.ref("players/" + winner).once("value", (snapshot) => {
+		db.ref("players/" + winner + "/wins").set(snapshot.val().wins + 1);
+	});
+};
 const play = (mySelection, oppSelection) => {
 	let result = gameLogic(mySelection, oppSelection);
-	database
-		.ref("result")
-		.set({ sel: [oppSelection, mySelection], outcome: result[0] });
+	db.ref("result").set({
+		sel: [oppSelection, mySelection],
+		outcome: result[0],
+	});
 };
 
 const gameLogic = (mySelection, oppSelection) => {
