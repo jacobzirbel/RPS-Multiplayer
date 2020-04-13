@@ -1,10 +1,11 @@
 window.onload = () => {
-	createButtons();
-
+	database.ref("players").on("value", (snapshot) => {
+		let val = snapshot.val();
+		if (!myId) createUserButtons(val);
+	});
 	database.ref("result").on("value", (snapshot) => {
 		result = snapshot.val();
 		if (result) {
-			console.log(result);
 			oppSelection = result.sel.find((e) => e !== mySelection) || mySelection;
 			document.getElementById("mySelection").textContent =
 				"Selection: " + mySelection;
@@ -15,6 +16,7 @@ window.onload = () => {
 		}
 	});
 };
+
 let config = {
 	apiKey: "AIzaSyDAa_Gey0LPsclpNXIsWqnbiL52J9ApuN0",
 	authDomain: "rps-5f79a.firebaseapp.com",
@@ -25,10 +27,9 @@ let config = {
 firebase.initializeApp(config);
 let database = firebase.database();
 let options = ["Rock", "Paper", "Scissors", "Lizard", "Spock"];
-var connectionsRef = database.ref("/connections");
-var connectedRef = database.ref(".info/connected");
-let selections = { 1: "", 2: "" };
-
+let connectionsRef = database.ref("/connections");
+let connectedRef = database.ref(".info/connected");
+let myId, oppId;
 const optionClick = (selection) => {
 	mySelection = selection;
 	hideButtons();
@@ -41,9 +42,11 @@ const optionClick = (selection) => {
 		}
 	});
 };
+
 const hideButtons = () => {
 	document.getElementById("controls").innerHTML = "";
 };
+
 const createButtons = () => {
 	hideButtons();
 	options.forEach((e) => {
@@ -53,12 +56,43 @@ const createButtons = () => {
 		document.getElementById("controls").appendChild(button);
 	});
 };
+
+const playerSelect = (selection) => {
+	myId = "player" + (selection + 1);
+	oppId = "player" + ((selection ? 0 : 1) + 1);
+	connectedRef.on("value", (snap) => {
+		if (snap.val()) {
+			var con = database
+				.ref("players")
+				.child(myId + "/connected")
+				.push(true);
+			con.onDisconnect().set({});
+		}
+	});
+	document.getElementById("home").innerHTML = "";
+
+	createButtons();
+};
+
+const createUserButtons = (val) => {
+	let buttons = [val.player1, val.player2].map((e, i) => {
+		let button = document.createElement("button");
+		button.disabled = Boolean(e.connected);
+		button.textContent = e.name || "Join as user " + (i + 1);
+		button.onclick = () => playerSelect(i);
+		return button;
+	});
+	document.getElementById("home").innerHTML = "";
+	buttons.forEach((e) => document.getElementById("home").appendChild(e));
+};
+
 const play = (mySelection, oppSelection) => {
 	let result = gameLogic(mySelection, oppSelection);
 	database
 		.ref("result")
 		.set({ sel: [oppSelection, mySelection], outcome: result[0] });
 };
+
 const gameLogic = (mySelection, oppSelection) => {
 	a = options.indexOf(mySelection);
 	b = options.indexOf(oppSelection);
