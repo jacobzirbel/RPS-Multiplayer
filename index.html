@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>RPS</title>
+		<script src="https://www.gstatic.com/firebasejs/6.0.4/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/6.0.4/firebase-database.js"></script>
+		<link
+			rel="stylesheet"
+			href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+			integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+			crossorigin="anonymous"
+		/>
+		<link rel="stylesheet" href="assets/style.css" />
+	</head>
+	<body>
+		<div class="container" id="game-play">
+			<div class="row">
+				<div id="username"></div>
+			</div>
+			<div class="row" id="game-row">
+				<div class="col-md-6" id="user2">
+					<h4>You</h4>
+					<p id="mySelection">Selection:</p>
+					<p id="myWins">Wins:</p>
+				</div>
+				<div class="col-md-6" id="user1">
+					<h4>Opponent</h4>
+					<p id="oppSelection">Selection:</p>
+					<p id="oppWins">Wins:</p>
+				</div>
+			</div>
+			<div class="row" id="controls"></div>
+		</div>
+		<script src="assets/script.js"></script>
+	</body>
+</html>
