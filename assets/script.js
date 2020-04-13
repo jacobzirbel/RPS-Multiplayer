@@ -1,10 +1,12 @@
 window.onload = () => {
 	db.ref("players").on("value", (snapshot) => {
 		let val = snapshot.val();
-		if (!myId) createUserButtons(val);
+		if (!myId) {
+			createUserButtons(val);
+		}
 	});
 	db.ref("result").on("value", (snapshot) => {
-		result = snapshot.val();
+		let result = snapshot.val();
 		if (result) {
 			oppSelection = result.sel.find((e) => e !== mySelection) || mySelection;
 			outcome = result.outcome;
@@ -18,6 +20,9 @@ window.onload = () => {
 			document.getElementById("outcome").innerHTML =
 				"Winner: " + winner + "<br>" + outcome;
 			db.ref("result").set({});
+			db.ref("players/player1/selection").set("");
+			db.ref("players/player2/selection").set("");
+			createButtons();
 		}
 	});
 };
@@ -35,8 +40,15 @@ let options = ["Rock", "Paper", "Scissors", "Lizard", "Spock"];
 let connectionsRef = db.ref("/connections");
 let connectedRef = db.ref(".info/connected");
 let myId, oppId;
+
 const optionClick = (selection) => {
 	mySelection = selection;
+	document.getElementById("oppSelection").textContent = "Selection: ";
+	document.getElementById("mySelection").textContent =
+		"Selection: " + mySelection;
+	db.ref("players")
+		.child(myId + "/selection")
+		.set(mySelection);
 	hideButtons();
 	db.ref("selection").once("value", (snapshot) => {
 		if (snapshot.val()) {
@@ -47,7 +59,9 @@ const optionClick = (selection) => {
 		}
 	});
 };
-
+const resetDisplay = () => {
+	document.getElementById("mySelection").textContent = "";
+};
 const hideButtons = () => {
 	document.getElementById("controls").innerHTML = "";
 };
@@ -74,9 +88,9 @@ const playerSelect = (selection) => {
 			con.onDisconnect().set({});
 		}
 	});
-	document.getElementById("home").innerHTML = "";
-
 	createButtons();
+	updateDisplay();
+	document.getElementById("home").innerHTML = "";
 };
 
 const createUserButtons = (val) => {
@@ -90,11 +104,30 @@ const createUserButtons = (val) => {
 	document.getElementById("home").innerHTML = "";
 	buttons.forEach((e) => document.getElementById("home").appendChild(e));
 };
+
 const addToWins = (winner) => {
 	if (!winner.includes("tie"))
 		db.ref("players/" + winner).once("value", (snapshot) => {
 			db.ref("players/" + winner + "/wins").set(snapshot.val().wins + 1);
 		});
+	updateDisplay(true);
+};
+
+const updateDisplay = (winsOnly = false) => {
+	db.ref("players/").once("value", (snapshot) => {
+		let val = snapshot.val()[myId];
+		document.getElementById("oppWins").textContent =
+			"Wins: " + snapshot.val()[oppId].wins;
+		document.getElementById("myWins").textContent = "Wins: " + val.wins;
+		if (!winsOnly) {
+			document.getElementById("mySelection").textContent =
+				"Selection: " + val.selection;
+			if (val.selection) {
+				mySelection = val.selection;
+				hideButtons();
+			}
+		}
+	});
 };
 const play = (mySelection, oppSelection) => {
 	let result = gameLogic(mySelection, oppSelection);
