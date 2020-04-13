@@ -13,8 +13,10 @@ window.onload = () => {
 			document.getElementById("oppSelection").textContent =
 				"Selection: " + oppSelection;
 			let winner = outcome.split(" ").indexOf(mySelection) ? oppId : myId;
+			if (outcome.includes("Nothing")) winner = "It's a tie";
 			addToWins(winner);
-			document.getElementById("outcome").textContent = outcome;
+			document.getElementById("outcome").innerHTML =
+				"Winner: " + winner + "<br>" + outcome;
 			db.ref("result").set({});
 		}
 	});
@@ -89,50 +91,51 @@ const createUserButtons = (val) => {
 	buttons.forEach((e) => document.getElementById("home").appendChild(e));
 };
 const addToWins = (winner) => {
-	db.ref("players/" + winner).once("value", (snapshot) => {
-		db.ref("players/" + winner + "/wins").set(snapshot.val().wins + 1);
-	});
+	if (!winner.includes("tie"))
+		db.ref("players/" + winner).once("value", (snapshot) => {
+			db.ref("players/" + winner + "/wins").set(snapshot.val().wins + 1);
+		});
 };
 const play = (mySelection, oppSelection) => {
 	let result = gameLogic(mySelection, oppSelection);
 	db.ref("result").set({
 		sel: [oppSelection, mySelection],
-		outcome: result[0],
+		outcome: result,
 	});
 };
 
 const gameLogic = (mySelection, oppSelection) => {
 	a = options.indexOf(mySelection);
 	b = options.indexOf(oppSelection);
-	if (a === b) return ["tie", "tie"];
+	if (a === b) return "Nothing nothings Nothing";
 	if (a === 0) {
-		if (b === 1) return ["Paper covers Rock", false];
-		if (b === 2) return ["Rock crushes Scissors", true];
-		if (b === 3) return ["Rock crushes Lizard :(", true];
-		if (b === 4) return ["Spock vaporizes Rock", false];
+		if (b === 1) return "Paper covers Rock";
+		if (b === 2) return "Rock crushes Scissors";
+		if (b === 3) return "Rock crushes Lizard :(";
+		if (b === 4) return "Spock vaporizes Rock";
 	}
 	if (a === 1) {
-		if (b === 0) return ["Paper covers Rock", true];
-		if (b === 2) return ["Scissors cuts Paper", false];
-		if (b === 3) return ["Lizard eats Paper", false];
-		if (b === 4) return ["Paper disproves Spock", true];
+		if (b === 0) return "Paper covers Rock";
+		if (b === 2) return "Scissors cuts Paper";
+		if (b === 3) return "Lizard eats Paper";
+		if (b === 4) return "Paper disproves Spock";
 	}
 	if (a === 2) {
-		if (b === 0) return ["Rock crushes Scissors", false];
-		if (b === 1) return ["Scissors cuts Paper", true];
-		if (b === 3) return ["Scissors decapitates Lizard :(", true];
-		if (b === 4) return ["Spock smashes Scissors", false];
+		if (b === 0) return "Rock crushes Scissors";
+		if (b === 1) return "Scissors cuts Paper";
+		if (b === 3) return "Scissors decapitates Lizard :(";
+		if (b === 4) return "Spock smashes Scissors";
 	}
 	if (a === 3) {
-		if (b === 0) return ["Rock crushes Lizard :(", false];
-		if (b === 1) return ["Lizard eats Paper", true];
-		if (b === 2) return ["Scissors decapitates Lizard :(", false];
-		if (b === 4) return ["Lizard poisons Spock", true];
+		if (b === 0) return "Rock crushes Lizard :(";
+		if (b === 1) return "Lizard eats Paper";
+		if (b === 2) return "Scissors decapitates Lizard :(";
+		if (b === 4) return "Lizard poisons Spock";
 	}
 	if (a === 4) {
-		if (b === 0) return ["Spock vaporizes Rock", true];
-		if (b === 1) return ["Paper disproves Spock", false];
-		if (b === 2) return ["Spock vaporizes Rock", true];
-		if (b === 3) return ["Lizard poisons Spock", false];
+		if (b === 0) return "Spock vaporizes Rock";
+		if (b === 1) return "Paper disproves Spock";
+		if (b === 2) return "Spock vaporizes Rock";
+		if (b === 3) return "Lizard poisons Spock";
 	}
 };
