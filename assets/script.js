@@ -5,9 +5,14 @@ window.onload = () => {
 			createUserButtons(val);
 		}
 	});
+
 	db.ref("result").on("value", (snapshot) => {
 		let result = snapshot.val();
 		if (result) {
+			// result (eg "Paper covers Rock") is parsed to get game info
+			// page knows mySelection (eg 'Paper') so it sets oppSelection to the other (eg 'Rock')
+			// Winner is always first word in result, so if the first word of the result is Paper, and mySelection is paper, then I am the winner
+			// This is not robust code but it gets the job done
 			oppSelection = result.sel.find((e) => e !== mySelection) || mySelection;
 			outcome = result.outcome;
 			document.getElementById("mySelection").textContent =
@@ -17,6 +22,7 @@ window.onload = () => {
 			let winner = outcome.split(" ").indexOf(mySelection) ? oppId : myId;
 			if (outcome.includes("Nothing")) winner = "It's a tie";
 			addToWins(winner);
+			winner = winner === myId ? "You" : "Opponent";
 			document.getElementById("outcome").innerHTML =
 				"Winner: " + winner + "<br>" + outcome;
 			db.ref("result").set({});
@@ -51,6 +57,9 @@ const optionClick = (selection) => {
 		.set(mySelection);
 	hideButtons();
 	db.ref("selection").once("value", (snapshot) => {
+		// there is one node in db for 'selection'
+		// always set to whichever player selects first
+		// game logic is handled by player that selected 2nd
 		if (snapshot.val()) {
 			play(selection, snapshot.val());
 			db.ref("selection").set({});
@@ -60,7 +69,8 @@ const optionClick = (selection) => {
 	});
 };
 const resetDisplay = () => {
-	document.getElementById("mySelection").textContent = "";
+	document.getElementById("mySelection").textContent = "Selection: ";
+	document.getElementById("oppSelection").textContent = "Selection: ";
 };
 const hideButtons = () => {
 	document.getElementById("controls").innerHTML = "";
