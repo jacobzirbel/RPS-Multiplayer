@@ -1,12 +1,12 @@
 window.onload = () => {
-	db.ref("players").on("value", (snapshot) => {
+	db.ref("game/players").on("value", (snapshot) => {
 		let val = snapshot.val();
 		if (!myId) {
 			createUserButtons(val);
 		}
 	});
 
-	db.ref("result").on("value", (snapshot) => {
+	db.ref("game/result").on("value", (snapshot) => {
 		let result = snapshot.val();
 		if (result) {
 			// result (eg "Paper covers Rock") is parsed to get game info
@@ -20,17 +20,31 @@ window.onload = () => {
 			document.getElementById("oppSelection").textContent =
 				"Selection: " + oppSelection;
 			let winner = outcome.split(" ").indexOf(mySelection) ? oppId : myId;
-			if (outcome.includes("Nothing")) winner = "It's a tie";
+			if (outcome.includes("Nothing")) winner = "No one";
 			addToWins(winner);
+			addToChat(winner + " wins! " + outcome);
 			winner = winner === myId ? "You" : "Opponent";
-			document.getElementById("outcome").innerHTML =
-				"Winner: " + winner + "<br>" + outcome;
-			db.ref("result").set({});
-			db.ref("players/player1/selection").set("");
-			db.ref("players/player2/selection").set("");
+			document.getElementById("outcome").innerHTML = "Winner: " + winner;
+			db.ref("game/result").set({});
+			db.ref("game/players/player1/selection").set("");
+			db.ref("game/players/player2/selection").set("");
 			createButtons();
 		}
 	});
+	db.ref("chat").once("value", (snap) => {});
+	db.ref("chat").on("child_added", (snap) => {
+		console.log(snap.key);
+		let e = { time: snap.key, message: snap.val() };
+		let newChat = document.createElement("p");
+		newChat.textContent = e.message;
+		newChat.setAttribute("class", "chat-message");
+		document.getElementById("chat").prepend(newChat);
+	});
+	db.ref("game/reset").on("value", (snap) => {
+		if (snap.val()) location.reload();
+		db.ref("game/").child("reset").set("");
+	});
+	startChatInputListener();
 };
 
 let config = {
@@ -43,7 +57,7 @@ let config = {
 firebase.initializeApp(config);
 let db = firebase.database();
 let options = ["Rock", "Paper", "Scissors", "Lizard", "Spock"];
-let connectionsRef = db.ref("/connections");
+let connectionsRef = db.ref("connections");
 let connectedRef = db.ref(".info/connected");
 let myId, oppId;
 
@@ -52,19 +66,19 @@ const optionClick = (selection) => {
 	document.getElementById("oppSelection").textContent = "Selection: ";
 	document.getElementById("mySelection").textContent =
 		"Selection: " + mySelection;
-	db.ref("players")
+	db.ref("game/players")
 		.child(myId + "/selection")
 		.set(mySelection);
 	hideButtons();
-	db.ref("selection").once("value", (snapshot) => {
+	db.ref("game/selection").once("value", (snapshot) => {
 		// there is one node in db for 'selection'
 		// always set to whichever player selects first
 		// game logic is handled by player that selected 2nd
 		if (snapshot.val()) {
 			play(selection, snapshot.val());
-			db.ref("selection").set({});
+			db.ref("game/selection").set({});
 		} else {
-			db.ref("selection").set(selection);
+			db.ref("game/selection").set(selection);
 		}
 	});
 };
@@ -92,7 +106,7 @@ const playerSelect = (selection) => {
 	connectedRef.on("value", (snap) => {
 		if (snap.val()) {
 			var con = db
-				.ref("players")
+				.ref("game/players")
 				.child(myId + "/connected")
 				.push(true);
 			con.onDisconnect().set({});
@@ -116,15 +130,15 @@ const createUserButtons = (val) => {
 };
 
 const addToWins = (winner) => {
-	if (!winner.includes("tie"))
-		db.ref("players/" + winner).once("value", (snapshot) => {
-			db.ref("players/" + winner + "/wins").set(snapshot.val().wins + 1);
+	if (winner !== "No one")
+		db.ref("game/players/" + winner).once("value", (snapshot) => {
+			db.ref("game/players/" + winner + "/wins").set(snapshot.val().wins + 1);
 		});
 	updateDisplay(true);
 };
 
 const updateDisplay = (winsOnly = false) => {
-	db.ref("players/").once("value", (snapshot) => {
+	db.ref("game/players/").once("value", (snapshot) => {
 		let val = snapshot.val()[myId];
 		document.getElementById("oppWins").textContent =
 			"Wins: " + snapshot.val()[oppId].wins;
@@ -141,10 +155,11 @@ const updateDisplay = (winsOnly = false) => {
 };
 const play = (mySelection, oppSelection) => {
 	let result = gameLogic(mySelection, oppSelection);
-	db.ref("result").set({
+	db.ref("game/result").set({
 		sel: [oppSelection, mySelection],
 		outcome: result,
 	});
+	addToChat(result);
 };
 
 const gameLogic = (mySelection, oppSelection) => {
@@ -181,4 +196,25 @@ const gameLogic = (mySelection, oppSelection) => {
 		if (b === 2) return "Spock vaporizes Rock";
 		if (b === 3) return "Lizard poisons Spock";
 	}
+};
+const startChatInputListener = () => {
+	document.getElementById("submit").addEventListener("click", () => {
+		addToChat(
+			(myId || "Guest") + " : " + document.getElementById("message").value
+		);
+	});
+};
+const addToChat = (message) => {
+	db.ref("chat").child(moment().format("MMDDHHmmss")).set(message);
+};
+const resetEverything = () => {
+	addToChat("users and wins have been reset");
+	db.ref("game").set({
+		players: {
+			player1: { selection: "", wins: 0 },
+			player2: { selection: "", wins: 0 },
+		},
+		selection: "",
+		reset: "1",
+	});
 };

@@ -34,7 +34,23 @@
 			</div>
 			<div class="row" id="controls"></div>
 			<div class="row" id="outcome"></div>
+			<div class="row">
+				<div class="container">
+					<input type="text" id="message" name="message" />
+					<input type="submit" value="Submit" id="submit" />
+					<div id="chat"></div>
+				</div>
+			</div>
+			<div class="row mt-5 flex-col">
+				<p>Reset everything, disconnect all players:</p>
+			</div>
+			<div class="row">
+				<button style="background-color: red;" onclick="resetEverything()">
+					RESET
+				</button>
+			</div>
 		</div>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment-with-locales.min.js"></script>
 		<script src="assets/script.js"></script>
 	</body>
 </html>

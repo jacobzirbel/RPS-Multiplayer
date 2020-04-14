@@ -1,0 +1,7 @@
+#chat {
+	border: 1px black solid;
+	height: 500px;
+	margin: 5px 20px;
+	word-wrap: break-word;
+	overflow: scroll;
+}
