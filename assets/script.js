@@ -4,6 +4,13 @@ window.onload = () => {
 		if (!myId) {
 			createUserButtons(val);
 		}
+		let playersConnected = 0;
+
+		for (player in val) {
+			if (Boolean(val[player].connected)) playersConnected++;
+		}
+		document.getElementById("connections").textContent =
+			playersConnected + " player(s) connected";
 	});
 
 	gameRef.child("/result").on("value", (snapshot) => {
@@ -31,6 +38,7 @@ window.onload = () => {
 			createButtons();
 		}
 	});
+
 	db.ref("chat").on("child_added", (snap) => {
 		let e = { time: snap.key, message: snap.val() };
 		let newChat = document.createElement("p");
@@ -120,15 +128,14 @@ const playerSelect = (selection) => {
 };
 
 const createUserButtons = (val) => {
-	let buttons = [val.player1, val.player2].map((e, i) => {
+	document.getElementById("home").innerHTML = "";
+	[val.player1, val.player2].forEach((e, i) => {
 		let button = document.createElement("button");
 		button.disabled = Boolean(e.connected);
 		button.textContent = e.name || "Join as user " + (i + 1);
 		button.onclick = () => playerSelect(i);
-		return button;
+		document.getElementById("home").appendChild(button);
 	});
-	document.getElementById("home").innerHTML = "";
-	buttons.forEach((e) => document.getElementById("home").appendChild(e));
 };
 
 const addToWins = (winner) => {
@@ -147,6 +154,7 @@ const updateDisplay = (winsOnly = false) => {
 		document.getElementById("oppWins").textContent =
 			"Wins: " + snapshot.val()[oppId].wins;
 		document.getElementById("myWins").textContent = "Wins: " + val.wins;
+
 		if (!winsOnly) {
 			document.getElementById("mySelection").textContent =
 				"Selection: " + val.selection;
