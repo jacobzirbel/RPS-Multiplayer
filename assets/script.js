@@ -103,6 +103,8 @@ const createButtons = () => {
 const playerSelect = (selection) => {
 	myId = "player" + (selection + 1);
 	oppId = "player" + ((selection ? 0 : 1) + 1);
+	document.getElementById("you-header").textContent = "You: " + myId;
+	document.getElementById("opp-header").textContent = "Opponent: " + oppId;
 	connectedRef.on("value", (snap) => {
 		if (snap.val()) {
 			var con = db
@@ -204,6 +206,7 @@ const startChatInputListener = () => {
 		addToChat(
 			(myId || "Guest") + " : " + document.getElementById("message").value
 		);
+		document.getElementById("message").value = "";
 	});
 };
 const addToChat = (message) => {
@@ -219,4 +222,8 @@ const resetEverything = () => {
 		selection: "",
 		reset: "1",
 	});
+};
+const clearChat = () => {
+	db.ref("chat").set({});
+	document.getElementById("chat").innerHTML = "";
 };
